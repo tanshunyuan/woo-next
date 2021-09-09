@@ -1,5 +1,4 @@
 import React,{ useState, useEffect } from "react";
-import {clientSide} from '../../utils/user'
 export const AppContext = React.createContext([{}, () => {}]);
 
 export const AppProvider = (props) => {
@@ -7,7 +6,7 @@ export const AppProvider = (props) => {
 
   useEffect(() => {
     // @TODO Will add option to show the cart with localStorage later.
-    if (clientSide) {
+    if (process.browser) {
       let cartData = localStorage.getItem("woo-next-cart");
       cartData = null !== cartData ? JSON.parse(cartData) : "";
       setCart(cartData);

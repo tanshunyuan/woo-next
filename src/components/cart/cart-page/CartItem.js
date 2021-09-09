@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { v4 } from "uuid";
 import { getUpdatedItems } from "../../../functions";
-import { clientSide } from "../../../utils/user";
 import { Cross, Loading } from "../../icons";
 
 const CartItem = ({
@@ -22,7 +21,7 @@ const CartItem = ({
    * @return {void}
    */
   const handleQtyChange = (event, cartKey) => {
-    if (clientSide) {
+    if (process.browser) {
       event.stopPropagation();
 
       // If the previous update cart mutation request is still processing, then return.
