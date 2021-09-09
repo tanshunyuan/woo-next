@@ -1,10 +1,10 @@
 import { isEmpty } from "lodash";
-const isClientSide = typeof window !== undefined;
+export const clientSide = typeof window !== undefined;
 
 export const isUserLoggedIn = () => {
   let authData = null;
 
-  if (isClientSide) {
+  if (clientSide) {
     authData = JSON.parse(localStorage.getItem("auth"));
   }
   return authData;
@@ -26,7 +26,7 @@ export const setAuth = (authData) => {
 export const isUserValidated = () => {
   let userLoggedInData = "";
 
-  if (isClientSide) {
+  if (clientSide) {
     let authTokenData:any = localStorage.getItem("auth");
 
     if (!isEmpty(authTokenData)) {

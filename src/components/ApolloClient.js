@@ -12,9 +12,6 @@ import {
  * If we have a session token in localStorage, add it to the GraphQL request as a Session header.
  */
 export const middleware = new ApolloLink((operation, forward) => {
-  /**
-   * If session data exist in local storage, set value as session header.
-   */
   const session = process.browser ? localStorage.getItem("woo-session") : null;
 
   if (session) {

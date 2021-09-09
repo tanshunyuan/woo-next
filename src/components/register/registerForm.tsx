@@ -1,4 +1,4 @@
-import { isUserLoggedIn, logOut, setAuth } from "../../utils/user";
+import { clientSide, isUserLoggedIn, setAuth } from "../../utils/user";
 import validateAndSanitizeRegisterForm from "../../utils/validator/register";
 import MessageAlert from "../message-alert";
 import { useState, useEffect } from "react";
@@ -95,7 +95,7 @@ const RegisterForm = () => {
    * @return {void}
    */
   const handleRegister = async (event) => {
-    if (process.browser) {
+    if (clientSide) {
       event.preventDefault();
 
       // Validation and Sanitization.
