@@ -76,3 +76,27 @@ export interface ICart {
   totalProductsCount: number;
   totalProductsPrice: string;
 }
+
+export interface IHitPayPaymentReq {
+  allow_repeated_payments: boolean;
+  amount: string;
+  created_at: Date;
+  currency: string;
+  email: string;
+  email_status: string;
+  expiry_date: Date | null;
+  id: string;
+  name: string;
+  payment_methods: string[];
+  phone: string;
+  purpose: string;
+  redirect_url: string;
+  reference_number: string;
+  send_email: boolean;
+  send_sms: boolean;
+  sms_status: string;
+  status: string;
+  updated_at: Date;
+  url: string;
+  webhook: string;
+}

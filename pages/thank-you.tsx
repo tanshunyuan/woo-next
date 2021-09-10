@@ -7,12 +7,14 @@ import { AppContext } from "../src/components/context/AppContext";
 import Loading from "../src/components/icons/Loading";
 import ShoppingCart from "../src/components/icons/ShoppingCart";
 import { clientSide } from "../src/utils/user";
+import { useRouter } from 'next/router';
 
 const ThankYouContent = () => {
+  const router = useRouter();
   const [cart, setCart] = useContext(AppContext);
   const [isSessionFetching, setSessionFetching] = useState(false);
   const [sessionData, setSessionData] = useState({});
-  const session_id = clientSide ? Router.query.session_id : null;
+  const session_id = process.browser ? router.query.session_id : null;
 
   useEffect(() => {
     setSessionFetching(true);

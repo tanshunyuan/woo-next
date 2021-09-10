@@ -172,6 +172,7 @@ const CheckoutForm = ({ countriesData }) => {
         clearCartMutation,
         setIsHitPayOrderProcessing,
         setCreatedOrderData,
+        totalPrice:cart?.totalProductsPrice,
       });
       return null;
     }

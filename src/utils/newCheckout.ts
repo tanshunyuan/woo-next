@@ -1,6 +1,12 @@
 import { isArray, isEmpty } from "lodash";
 import { clearTheCart } from "./cart";
-import { ILineItem, IOrderInfo, IProduct, IWooCommerceOrderData } from "./types";
+import { createHitPayCheckoutSession } from "./hitpayapp";
+import {
+  ILineItem,
+  IOrderInfo,
+  IProduct,
+  IWooCommerceOrderData,
+} from "./types";
 const handleHitPayApp = async ({
   customerInfo,
   products,
@@ -8,6 +14,7 @@ const handleHitPayApp = async ({
   clearCartMutation,
   setIsHitPayOrderProcessing,
   setCreatedOrderData,
+  totalPrice,
 }) => {
   setIsHitPayOrderProcessing(true);
   const orderData = getCreateOrderData(customerInfo, products);
@@ -16,53 +23,76 @@ const handleHitPayApp = async ({
     setRequestError,
     ""
   );
-  const cartCleared = await clearTheCart(
-    clearCartMutation,
-    createCustomerOrder?.error
-  );
+  // const cartCleared = await clearTheCart(
+  //   clearCartMutation,
+  //   createCustomerOrder?.error
+  // );
   setIsHitPayOrderProcessing(false);
 
-  if (isEmpty(createCustomerOrder?.orderId) || cartCleared?.error) {
-    console.log("came in");
-    setRequestError("Clear cart failed");
-    return null;
-  }
+  // if (isEmpty(createCustomerOrder?.orderId) || cartCleared?.error) {
+  //   console.log("came in");
+  //   setRequestError("Clear cart failed");
+  //   return null;
+  // }
 
   // On success show stripe form.
   setCreatedOrderData(createCustomerOrder);
   await createCheckoutSessionAndRedirect(
     products,
     customerInfo,
-    createCustomerOrder?.orderId
+    createCustomerOrder?.orderId,
+    totalPrice
   );
 
   return createCustomerOrder;
 };
 
-const createCheckoutSessionAndRedirect = async (products, input, orderId:string) => {
+const createCheckoutSessionAndRedirect = async (
+  products,
+  input,
+  orderId: string,
+  totalPrice
+) => {
+  const customer_email = input.billingDifferentThanShipping
+    ? input?.billing?.email
+    : input?.shipping?.email;
+  // const redirect_url = `${window.location.origin}/thank-you?session_id{CHECKOUT_SESSION_ID}&order_id=${orderId}`;
+  const redirect_url = `${window.location.origin}/thank-you`;
+  totalPrice = parseInt(totalPrice.split("$")[1]);
+
   const sessionData = {
-    success_url:
-      window.location.origin +
-      `/thank-you?session_id={CHECKOUT_SESSION_ID}&order_id=${orderId}`,
+    redirect_url,
     cancel_url: window.location.href,
-    customer_email: input.billingDifferentThanShipping
-      ? input?.billing?.email
-      : input?.shipping?.email,
+    customer_email,
     line_items: getStripeLineItems(products),
     metadata: getMetaData(input, orderId),
     payment_method_types: ["card"],
     mode: "payment",
+    totalPrice
   };
+  console.log(sessionData);
+  const sessionUrl = await createHitPayCheckoutSession({
+    amount: totalPrice,
+    email: customer_email,
+    name: "something",
+    redirect_url,
+    reference_number: orderId,
+  });
+  try {
+    window.open(sessionUrl)
+  }catch(error){
+    console.log(error)
+  }
   //This is where le custom integration needs to come in
-    // const session = await createCheckoutSession(sessionData)
-    // try {
-    //     const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-    //     if (stripe) {
-    //         stripe.redirectToCheckout({ sessionId: session.id });
-    //     }
-    // } catch (error) {
-    //     console.log( error );
-    // }
+  // const session = await createCheckoutSession(sessionData)
+  // try {
+  //     const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  //     if (stripe) {
+  //         stripe.redirectToCheckout({ sessionId: session.id });
+  //     }
+  // } catch (error) {
+  //     console.log( error );
+  // }
 };
 
 const getStripeLineItems = (products) => {
@@ -105,9 +135,12 @@ export const getMetaData = (input, orderId) => {
   //     metadata.customerId = customerId;
   // }
 };
-export const getCreateOrderData = (order:IOrderInfo, products:IProduct[]):IWooCommerceOrderData=> {
-  console.log(order)
-  console.log(products)
+export const getCreateOrderData = (
+  order: IOrderInfo,
+  products: IProduct[]
+): IWooCommerceOrderData => {
+  console.log(order);
+  console.log(products);
   // Set the billing Data to shipping, if applicable.
   const billingData = order.billingDifferentThanShipping
     ? order.billing
@@ -146,7 +179,7 @@ export const getCreateOrderData = (order:IOrderInfo, products:IProduct[]):IWooCo
     line_items: getCreateOrderLineItems(products),
   };
 };
-export const getCreateOrderLineItems = (products:IProduct[]):ILineItem[] => {
+export const getCreateOrderLineItems = (products: IProduct[]): ILineItem[] => {
   if (isEmpty(products) || !isArray(products)) {
     return [];
   }
@@ -159,7 +192,7 @@ export const getCreateOrderLineItems = (products:IProduct[]):ILineItem[] => {
   });
 };
 export const createTheOrder = async (
-  orderData:IWooCommerceOrderData,
+  orderData: IWooCommerceOrderData,
   setOrderFailedError,
   previousRequestError
 ) => {
