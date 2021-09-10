@@ -1,5 +1,6 @@
 import { v4 } from "uuid";
 import { clientSide } from "./utils/user";
+import DOMPurify from 'dompurify';
 
 /**
  * Extracts and returns float value from a string.
@@ -341,14 +342,13 @@ export const getUpdatedItems = (products, newQty, cartKey) => {
 };
 
 export const sanitize = (content) => {
-  return clientSide ? DOMPurify.sanitize(content) : content;
+  return process.browser ? DOMPurify.sanitize(content) : content;
 };
+
 export const getFormattedDate = (dateString) => {
   if (!dateString) {
     return "";
   }
-
   const date = new Date(dateString);
-
   return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
 };

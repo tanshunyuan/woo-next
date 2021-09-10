@@ -18,8 +18,8 @@ const LoginForm = () => {
     }
   }, [loggedIn]);
   const [loginFields, setLoginFields] = useState({
-    username: "",
-    password: "",
+    username: "admin",
+    password: "1234",
   });
 
   const [errorMessage, setErrorMessage] = useState(null);
