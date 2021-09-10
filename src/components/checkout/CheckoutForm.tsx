@@ -19,42 +19,44 @@ import {
 } from "../../utils/checkout";
 import CheckboxField from "./form-elements/CheckboxField";
 import CLEAR_CART_MUTATION from "../../mutations/clear-cart";
+import { ICheckoutInfo, ICustomerInfo } from "../../utils/types";
+import { handleHitPayApp } from "../../utils/newCheckout";
 
 // Use this for testing purposes, so you dont have to fill the checkout form over an over again.
-// const defaultCustomerInfo = {
-// 	firstName: 'Imran',
-// 	lastName: 'Sayed',
-// 	address1: '123 Abc farm',
-// 	address2: 'Hill Road',
-// 	city: 'Mumbai',
-// 	country: 'IN',
-// 	state: 'Maharastra',
-// 	postcode: '221029',
-// 	email: 'codeytek.academy@gmail.com',
-// 	phone: '9883778278',
-// 	company: 'The Company',
-// 	errors: null
-// }
-
-const defaultCustomerInfo = {
-  firstName: "",
-  lastName: "",
-  address1: "",
-  address2: "",
-  city: "",
-  country: "",
-  state: "",
-  postcode: "",
-  email: "",
-  phone: "",
-  company: "",
+const defaultCustomerInfo: ICustomerInfo = {
+  firstName: "Imran",
+  lastName: "Sayed",
+  address1: "123 Abc farm",
+  address2: "Hill Road",
+  city: "Mumbai",
+  country: "IN",
+  state: "Maharastra",
+  postcode: "221029",
+  email: "codeytek.academy@gmail.com",
+  phone: "9883778278",
+  company: "The Company",
   errors: null,
 };
+
+// const defaultCustomerInfo = {
+//   firstName: "",
+//   lastName: "",
+//   address1: "",
+//   address2: "",
+//   city: "",
+//   country: "",
+//   state: "",
+//   postcode: "",
+//   email: "",
+//   phone: "",
+//   company: "",
+//   errors: null,
+// };
 
 const CheckoutForm = ({ countriesData }) => {
   const { billingCountries, shippingCountries } = countriesData || {};
 
-  const initialState = {
+  const initialState: ICheckoutInfo = {
     billing: {
       ...defaultCustomerInfo,
     },
@@ -77,6 +79,7 @@ const CheckoutForm = ({ countriesData }) => {
   const [theBillingStates, setTheBillingStates] = useState([]);
   const [isFetchingBillingStates, setIsFetchingBillingStates] = useState(false);
   const [isStripeOrderProcessing, setIsStripeOrderProcessing] = useState(false);
+  const [isHitPayOrderProcessing, setIsHitPayOrderProcessing] = useState(false);
   const [createdOrderData, setCreatedOrderData] = useState({});
 
   // Get Cart Data.
@@ -114,7 +117,7 @@ const CheckoutForm = ({ countriesData }) => {
    *
    * @return {void}
    */
-  const handleFormSubmit = async (event) => {
+  const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     /**
@@ -158,6 +161,18 @@ const CheckoutForm = ({ countriesData }) => {
         setIsStripeOrderProcessing,
         setCreatedOrderData
       );
+      return null;
+    }
+
+    if (input.paymentMethod === "hitpayapp") {
+      await handleHitPayApp({
+        customerInfo: input,
+        products: cart?.products,
+        setRequestError,
+        clearCartMutation,
+        setIsHitPayOrderProcessing,
+        setCreatedOrderData,
+      });
       return null;
     }
 
@@ -228,6 +243,7 @@ const CheckoutForm = ({ countriesData }) => {
     );
   };
 
+  // probably refactor to use useCallback
   useEffect(async () => {
     if (null !== orderData) {
       // Call the checkout mutation when the value for orderData changes/updates.
@@ -236,7 +252,8 @@ const CheckoutForm = ({ countriesData }) => {
   }, [orderData]);
 
   // Loading state
-  const isOrderProcessing = checkoutLoading || isStripeOrderProcessing;
+  const isOrderProcessing =
+    checkoutLoading || isStripeOrderProcessing || isHitPayOrderProcessing;
 
   return (
     <>

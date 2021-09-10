@@ -71,7 +71,9 @@ export const handleCreateAccount = ( input, setInput, target ) => {
 export const handleStripeCheckout = async (input, products, setRequestError, clearCartMutation, setIsStripeOrderProcessing, setCreatedOrderData) => {
     setIsStripeOrderProcessing(true);
     const orderData = getCreateOrderData( input, products );
+  console.log('orderdata ==> ', orderData)
     const createCustomerOrder = await createTheOrder( orderData, setRequestError,  '' );
+  console.log('createcustomerorder ==> ', createCustomerOrder)
     const cartCleared = await clearTheCart( clearCartMutation, createCustomerOrder?.error );
     setIsStripeOrderProcessing(false);
 

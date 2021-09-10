@@ -1,8 +1,9 @@
-import React,{ useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { ICart } from "../../utils/types";
 export const AppContext = React.createContext([{}, () => {}]);
 
 export const AppProvider = (props) => {
-  const [cart, setCart] = useState(null);
+  const [cart, setCart] = useState<ICart | null | string>(null);
 
   useEffect(() => {
     // @TODO Will add option to show the cart with localStorage later.
