@@ -7,6 +7,12 @@ import {
   IProduct,
   IWooCommerceOrderData,
 } from "./types";
+//le flow
+//1. User clicks pay and order gets created and gets redirected to payment page
+//2. If there is any error navigating to the page, display it
+//3. Once redirected, if the user closes the page prematurely. Show user that
+//they did not complete the payment
+//4. The cart should only be cleared once payment is successful
 const handleHitPayApp = async ({
   customerInfo,
   products,
@@ -51,90 +57,34 @@ const createCheckoutSessionAndRedirect = async (
   products,
   input,
   orderId: string,
-  totalPrice
+  totalPrice:string
 ) => {
   const customer_email = input.billingDifferentThanShipping
     ? input?.billing?.email
     : input?.shipping?.email;
-  // const redirect_url = `${window.location.origin}/thank-you?session_id{CHECKOUT_SESSION_ID}&order_id=${orderId}`;
-  const redirect_url = `${window.location.origin}/thank-you`;
-  totalPrice = parseInt(totalPrice.split("$")[1]);
 
-  const sessionData = {
-    redirect_url,
-    cancel_url: window.location.href,
-    customer_email,
-    line_items: getStripeLineItems(products),
-    metadata: getMetaData(input, orderId),
-    payment_method_types: ["card"],
-    mode: "payment",
-    totalPrice
-  };
-  console.log(sessionData);
+  const { firstName, lastName } = input?.shipping;
+  const name = `${firstName} ${lastName}`;
+  const redirect_url = `${window.location.origin}/thank-you`;
+  const amount = parseInt(totalPrice.split("$")[1]);
+
   const sessionUrl = await createHitPayCheckoutSession({
-    amount: totalPrice,
+    amount,
     email: customer_email,
-    name: "something",
+    name,
     redirect_url,
     reference_number: orderId,
+    phone_number:'12345678'
   });
   try {
-    window.open(sessionUrl)
-  }catch(error){
-    console.log(error)
+    // window.open(sessionUrl, "_self");
+    window.open(sessionUrl);
+  } catch (error) {
+    console.log(error);
   }
-  //This is where le custom integration needs to come in
-  // const session = await createCheckoutSession(sessionData)
-  // try {
-  //     const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-  //     if (stripe) {
-  //         stripe.redirectToCheckout({ sessionId: session.id });
-  //     }
-  // } catch (error) {
-  //     console.log( error );
-  // }
 };
 
-const getStripeLineItems = (products) => {
-  if (isEmpty(products) && !isArray(products)) {
-    return [];
-  }
 
-  return products.map((product) => {
-    return {
-      quantity: product?.qty ?? 0,
-      name: product?.name ?? "",
-      images: [product?.image?.sourceUrl ?? ""],
-      amount: Math.round(product?.price * 100),
-      currency: "sgd",
-    };
-  });
-};
-
-/**
- * Get meta data.
- *
- * @param input
- * @param {String} orderId Order Id.
- *
- * @returns {{lineItems: string, shipping: string, orderId, billing: string}}
- */
-export const getMetaData = (input, orderId) => {
-  return {
-    billing: JSON.stringify(input?.billing),
-    shipping: JSON.stringify(
-      input.billingDifferentThanShipping
-        ? input?.billing?.email
-        : input?.shipping?.email
-    ),
-    orderId,
-  };
-
-  // @TODO
-  // if ( customerId ) {
-  //     metadata.customerId = customerId;
-  // }
-};
 export const getCreateOrderData = (
   order: IOrderInfo,
   products: IProduct[]

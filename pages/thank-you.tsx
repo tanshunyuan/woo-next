@@ -7,24 +7,26 @@ import { AppContext } from "../src/components/context/AppContext";
 import Loading from "../src/components/icons/Loading";
 import ShoppingCart from "../src/components/icons/ShoppingCart";
 import { clientSide } from "../src/utils/user";
-import { useRouter } from 'next/router';
+import { useRouter } from "next/router";
 
 const ThankYouContent = () => {
   const router = useRouter();
   const [cart, setCart] = useContext(AppContext);
   const [isSessionFetching, setSessionFetching] = useState(false);
   const [sessionData, setSessionData] = useState({});
-  const session_id = process.browser ? router.query.session_id : null;
+  // const session_id = process.browser ? router.query.session_id : null;
+  const reference_id = process.browser ? router.query.reference : null;
 
   useEffect(() => {
     setSessionFetching(true);
     if (clientSide) {
       localStorage.removeItem("woo-next-cart");
       setCart(null);
-
-      if (session_id) {
+      if (reference_id) {
         axios
-          .get(`/api/get-stripe-session/?session_id=${session_id}`)
+          .get(
+            `https://9b41-121-7-44-127.ngrok.io/api/hitpay/get-hitpay-status?reference_id=${reference_id}`
+          )
           .then((response) => {
             setSessionData(response?.data ?? {});
             setSessionFetching(false);
@@ -35,7 +37,7 @@ const ThankYouContent = () => {
           });
       }
     }
-  }, [session_id]);
+  }, [reference_id]);
 
   return (
     <div className="h-almost-screen">
@@ -63,13 +65,11 @@ const ThankYouContent = () => {
               <tbody>
                 <tr>
                   <td className="px-4 py-3">Order#</td>
-                  <td className="px-4 py-3">
-                    {sessionData?.metadata?.orderId}
-                  </td>
+                  <td className="px-4 py-3">{sessionData.reference_number}</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3">Email</td>
-                  <td className="px-4 py-3">{sessionData?.customer_email}</td>
+                  <td className="px-4 py-3">{sessionData.email}</td>
                 </tr>
               </tbody>
             </table>

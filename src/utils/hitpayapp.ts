@@ -16,24 +16,27 @@ const createHitPayCheckoutSession = async ({
   email,
   name,
   redirect_url,
-  // webhook,
   reference_number,
+  phone_number,
 }) => {
   const data = {
     amount,
     email,
     name,
     redirect_url,
-    // webhook,
+    // webhook:'http://localhost:3000/api/hitpay/hitpay-web-hook',
+    webhook: "https://9b41-121-7-44-127.ngrok.io/api/hitpay/hitpay-web-hook",
     reference_number,
     currency: "SGD",
     payment_methods: ["paynow_online"],
+    phone: phone_number,
   };
-  const session:IHitPayPaymentReq = await axios.post(
-    `${baseUrl}/payment-requests`,
-    qs.stringify(data),
-    config
-  ).then(response=> response.data);
+  const session: IHitPayPaymentReq = await axios
+    .post(`${baseUrl}/payment-requests`, qs.stringify(data), config)
+    .then((response) => {
+      console.log("response ==> ", response);
+      return response.data;
+    });
   return session.url;
 };
 export { createHitPayCheckoutSession };

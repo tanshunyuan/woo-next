@@ -8,8 +8,6 @@ const api = new WooCommerceRestApi({
   consumerSecret: process.env.WOOCOMMERCE_CONSUMER_SECRET,
   version: "wc/v3",
 });
-console.log('api ==> ', api)
-
 /**
  * Create order endpoint.
  *
@@ -40,7 +38,6 @@ export default async function handler(
   const data = req.body;
   data.status = "pending";
   data.set_paid = false;
-  console.log(data)
 
   try {
     const { data } = await api.post("orders", req.body);
