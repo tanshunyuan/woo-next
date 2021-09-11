@@ -1,3 +1,4 @@
+import { Dispatch, SetStateAction } from "react";
 export interface ICustomerInfo {
   firstName: string;
   lastName: string;
@@ -75,6 +76,15 @@ export interface ICart {
   products: IProduct[];
   totalProductsCount: number;
   totalProductsPrice: string;
+}
+export interface IHandleHitPay{
+  checkoutInfo: ICheckoutInfo;
+  products: IProduct[];
+  setRequestError: Dispatch<SetStateAction<any>>;
+  clearCartMutation:any;
+  setIsHitPayOrderProcessing: Dispatch<SetStateAction<boolean>>;
+  setCreatedOrderData: Dispatch<SetStateAction<any>>;
+  totalPrice:string
 }
 export interface IHitPayWebhookRes{
   payment_id:string;

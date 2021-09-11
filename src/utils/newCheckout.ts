@@ -2,8 +2,9 @@ import { isArray, isEmpty } from "lodash";
 import { clearTheCart } from "./cart";
 import { createHitPayCheckoutSession } from "./hitpayapp";
 import {
+  ICheckoutInfo,
+  IHandleHitPay,
   ILineItem,
-  IOrderInfo,
   IProduct,
   IWooCommerceOrderData,
 } from "./types";
@@ -13,39 +14,38 @@ import {
 //3. Once redirected, if the user closes the page prematurely. Show user that
 //they did not complete the payment
 //4. The cart should only be cleared once payment is successful
-const handleHitPayApp = async ({
-  customerInfo,
+const handleHitPay = async ({
+  checkoutInfo,
   products,
   setRequestError,
   clearCartMutation,
   setIsHitPayOrderProcessing,
   setCreatedOrderData,
   totalPrice,
-}) => {
+}: IHandleHitPay) => {
   setIsHitPayOrderProcessing(true);
-  const orderData = getCreateOrderData(customerInfo, products);
-  const createCustomerOrder = await createTheOrder(
+  const orderData = getWooCommerceOrderData(checkoutInfo, products);
+  const createCustomerOrder = await createWooCommerceOrder(
     orderData,
     setRequestError,
     ""
   );
-  // const cartCleared = await clearTheCart(
-  //   clearCartMutation,
-  //   createCustomerOrder?.error
-  // );
+  const cartCleared = await clearTheCart(
+    clearCartMutation,
+    createCustomerOrder?.error
+  );
   setIsHitPayOrderProcessing(false);
 
-  // if (isEmpty(createCustomerOrder?.orderId) || cartCleared?.error) {
-  //   console.log("came in");
-  //   setRequestError("Clear cart failed");
-  //   return null;
-  // }
+  if (isEmpty(createCustomerOrder?.orderId) || cartCleared?.error) {
+    console.log("came in");
+    setRequestError("Clear cart failed");
+    return null;
+  }
 
   // On success show stripe form.
   setCreatedOrderData(createCustomerOrder);
   await createCheckoutSessionAndRedirect(
-    products,
-    customerInfo,
+    checkoutInfo,
     createCustomerOrder?.orderId,
     totalPrice
   );
@@ -54,16 +54,15 @@ const handleHitPayApp = async ({
 };
 
 const createCheckoutSessionAndRedirect = async (
-  products,
-  input,
+  checkoutInfo:ICheckoutInfo,
   orderId: string,
-  totalPrice:string
+  totalPrice: string
 ) => {
-  const customer_email = input.billingDifferentThanShipping
-    ? input?.billing?.email
-    : input?.shipping?.email;
+  const customer_email = checkoutInfo.billingDifferentThanShipping
+    ? checkoutInfo.billing.email
+    : checkoutInfo.shipping?.email;
 
-  const { firstName, lastName } = input?.shipping;
+  const { firstName, lastName } = checkoutInfo.shipping;
   const name = `${firstName} ${lastName}`;
   const redirect_url = `${window.location.origin}/thank-you`;
   const amount = parseInt(totalPrice.split("$")[1]);
@@ -74,7 +73,7 @@ const createCheckoutSessionAndRedirect = async (
     name,
     redirect_url,
     reference_number: orderId,
-    phone_number:'12345678'
+    phone_number: "12345678",
   });
   try {
     // window.open(sessionUrl, "_self");
@@ -84,13 +83,10 @@ const createCheckoutSessionAndRedirect = async (
   }
 };
 
-
-export const getCreateOrderData = (
-  order: IOrderInfo,
+const getWooCommerceOrderData = (
+  order: ICheckoutInfo,
   products: IProduct[]
 ): IWooCommerceOrderData => {
-  console.log(order);
-  console.log(products);
   // Set the billing Data to shipping, if applicable.
   const billingData = order.billingDifferentThanShipping
     ? order.billing
@@ -129,6 +125,7 @@ export const getCreateOrderData = (
     line_items: getCreateOrderLineItems(products),
   };
 };
+
 export const getCreateOrderLineItems = (products: IProduct[]): ILineItem[] => {
   if (isEmpty(products) || !isArray(products)) {
     return [];
@@ -141,7 +138,7 @@ export const getCreateOrderLineItems = (products: IProduct[]): ILineItem[] => {
     };
   });
 };
-export const createTheOrder = async (
+const createWooCommerceOrder = async (
   orderData: IWooCommerceOrderData,
   setOrderFailedError,
   previousRequestError
@@ -187,4 +184,4 @@ export const createTheOrder = async (
 
   return response;
 };
-export { handleHitPayApp };
+export { handleHitPay };

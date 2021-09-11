@@ -20,7 +20,7 @@ import {
 import CheckboxField from "./form-elements/CheckboxField";
 import CLEAR_CART_MUTATION from "../../mutations/clear-cart";
 import { ICheckoutInfo, ICustomerInfo } from "../../utils/types";
-import { handleHitPayApp } from "../../utils/newCheckout";
+import { handleHitPay } from "../../utils/newCheckout";
 
 // Use this for testing purposes, so you dont have to fill the checkout form over an over again.
 const defaultCustomerInfo: ICustomerInfo = {
@@ -70,7 +70,7 @@ const CheckoutForm = ({ countriesData }) => {
   };
 
   const [cart, setCart] = useContext(AppContext);
-  const [input, setInput] = useState(initialState);
+  const [checkoutInfo, setCheckoutInfo] = useState<ICheckoutInfo>(initialState);
   const [orderData, setOrderData] = useState(null);
   const [requestError, setRequestError] = useState(null);
   const [theShippingStates, setTheShippingStates] = useState([]);
@@ -128,23 +128,26 @@ const CheckoutForm = ({ countriesData }) => {
      * 2. We are passing theBillingStates?.length and theShippingStates?.length, so that
      * the respective states should only be mandatory, if a country has states.
      */
-    const billingValidationResult = input?.billingDifferentThanShipping
+    const billingValidationResult = checkoutInfo.billingDifferentThanShipping
       ? validateAndSanitizeCheckoutForm(
-          input?.billing,
+          checkoutInfo.billing,
           theBillingStates?.length
         )
       : { errors: null, isValid: true };
     const shippingValidationResult = validateAndSanitizeCheckoutForm(
-      input?.shipping,
+      checkoutInfo.shipping,
       theShippingStates?.length
     );
 
     if (!shippingValidationResult.isValid || !billingValidationResult.isValid) {
-      setInput({
-        ...input,
-        billing: { ...input.billing, errors: billingValidationResult.errors },
+      setCheckoutInfo({
+        ...checkoutInfo,
+        billing: {
+          ...checkoutInfo.billing,
+          errors: billingValidationResult.errors,
+        },
         shipping: {
-          ...input.shipping,
+          ...checkoutInfo.shipping,
           errors: shippingValidationResult.errors,
         },
       });
@@ -154,7 +157,7 @@ const CheckoutForm = ({ countriesData }) => {
 
     if ("stripe-mode" === input.paymentMethod) {
       const createdOrderData = await handleStripeCheckout(
-        input,
+        checkoutInfo,
         cart?.products,
         setRequestError,
         clearCartMutation,
@@ -164,20 +167,20 @@ const CheckoutForm = ({ countriesData }) => {
       return null;
     }
 
-    if (input.paymentMethod === "hitpayapp") {
-      await handleHitPayApp({
-        customerInfo: input,
+    if (checkoutInfo.paymentMethod === "hitpayapp") {
+      await handleHitPay({
+        checkoutInfo,
         products: cart?.products,
         setRequestError,
         clearCartMutation,
         setIsHitPayOrderProcessing,
         setCreatedOrderData,
-        totalPrice:cart?.totalProductsPrice,
+        totalPrice: cart?.totalProductsPrice,
       });
       return null;
     }
 
-    const checkOutData = createCheckoutData(input);
+    const checkOutData = createCheckoutData(checkoutInfo);
     setRequestError(null);
     /**
      *  When order data is set, checkout mutation will automatically be called,
@@ -203,9 +206,9 @@ const CheckoutForm = ({ countriesData }) => {
     const { target } = event || {};
 
     if ("createAccount" === target.name) {
-      handleCreateAccount(input, setInput, target);
+      handleCreateAccount(checkoutInfo, setCheckoutInfo, target);
     } else if ("billingDifferentThanShipping" === target.name) {
-      handleBillingDifferentThanShipping(input, setInput, target);
+      handleBillingDifferentThanShipping(checkoutInfo, setCheckoutInfo, target);
     } else if (isBillingOrShipping) {
       if (isShipping) {
         await handleShippingChange(target);
@@ -213,17 +216,17 @@ const CheckoutForm = ({ countriesData }) => {
         await handleBillingChange(target);
       }
     } else {
-      const newState = { ...input, [target.name]: target.value };
-      setInput(newState);
+      const newState = { ...checkoutInfo, [target.name]: target.value };
+      setCheckoutInfo(newState);
     }
   };
 
   const handleShippingChange = async (target) => {
     const newState = {
-      ...input,
-      shipping: { ...input?.shipping, [target.name]: target.value },
+      ...checkoutInfo,
+      shipping: { ...checkoutInfo?.shipping, [target.name]: target.value },
     };
-    setInput(newState);
+    setCheckoutInfo(newState);
     await setStatesForCountry(
       target,
       setTheShippingStates,
@@ -233,10 +236,10 @@ const CheckoutForm = ({ countriesData }) => {
 
   const handleBillingChange = async (target) => {
     const newState = {
-      ...input,
-      billing: { ...input?.billing, [target.name]: target.value },
+      ...checkoutInfo,
+      billing: { ...checkoutInfo.billing, [target.name]: target.value },
     };
-    setInput(newState);
+    setCheckoutInfo(newState);
     await setStatesForCountry(
       target,
       setTheBillingStates,
@@ -268,7 +271,7 @@ const CheckoutForm = ({ countriesData }) => {
                 <Address
                   states={theShippingStates}
                   countries={shippingCountries}
-                  input={input?.shipping}
+                  input={checkoutInfo.shipping}
                   handleOnChange={(event) => handleOnChange(event, true, true)}
                   isFetchingStates={isFetchingShippingStates}
                   isShipping
@@ -279,20 +282,20 @@ const CheckoutForm = ({ countriesData }) => {
                 <CheckboxField
                   name="billingDifferentThanShipping"
                   type="checkbox"
-                  checked={input?.billingDifferentThanShipping}
+                  checked={checkoutInfo.billingDifferentThanShipping}
                   handleOnChange={handleOnChange}
                   label="Billing different than shipping"
                   containerClassNames="mb-4 pt-4"
                 />
               </div>
               {/*Billing Details*/}
-              {input?.billingDifferentThanShipping ? (
+              {checkoutInfo.billingDifferentThanShipping ? (
                 <div className="billing-details">
                   <h2 className="text-xl font-medium mb-4">Billing Details</h2>
                   <Address
                     states={theBillingStates}
                     countries={billingCountries}
-                    input={input?.billing}
+                    input={checkoutInfo.billing}
                     handleOnChange={(event) =>
                       handleOnChange(event, false, true)
                     }
@@ -310,7 +313,7 @@ const CheckoutForm = ({ countriesData }) => {
               <YourOrder cart={cart} />
 
               {/*Payment*/}
-              <PaymentModes input={input} handleOnChange={handleOnChange} />
+              <PaymentModes input={checkoutInfo} handleOnChange={handleOnChange} />
 
               <div className="woo-next-place-order-btn-wrap mt-5">
                 <button
