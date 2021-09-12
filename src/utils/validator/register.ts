@@ -1,4 +1,5 @@
 import validator from "validator";
+import * as Yup from "yup";
 import { isEmpty } from "lodash";
 interface IRegister {
   username: string;
@@ -13,12 +14,23 @@ interface IAddErrorAndSanitizedData {
   type: string;
   required: boolean;
 }
-interface IRegisterReturn{
-  sanitizedData:any
-  errors:any
-  isValid:boolean
+interface IRegisterReturn {
+  sanitizedData: any;
+  errors: any;
+  isValid: boolean;
 }
-const validateAndSanitizeRegisterForm = (data: IRegister):IRegisterReturn => {
+export const RegisterSchema = Yup.object().shape({
+  username: Yup.string()
+    .min(2, "Too Short!")
+    .max(50, "Too Long!")
+    .required("Required"),
+  email: Yup.string().email("Invalide email").required("Required"),
+  password: Yup.string()
+    .min(1, "Too Short!")
+    .max(50, "Too Long!")
+    .required("Required"),
+});
+const validateAndSanitizeRegisterForm = (data: IRegister): IRegisterReturn => {
   let errors = {};
   let sanitizedData = {};
 

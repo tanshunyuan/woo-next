@@ -87,14 +87,14 @@ const LoginForm = () => {
             <InputField
               label="Username"
               name="username"
-              placeholder="Username"
+              placeholder="John Doe"
               errors={errors}
               touched={touched}
             />
             <InputField
               label="Password"
               name="password"
-              placeholder="Password"
+              placeholder="********"
               type="password"
               errors={errors}
               touched={touched}

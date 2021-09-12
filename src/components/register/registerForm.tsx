@@ -1,16 +1,17 @@
-import { clientSide, isUserLoggedIn, setAuth } from "../../utils/user";
-import validateAndSanitizeRegisterForm from "../../utils/validator/register";
+import { isUserLoggedIn, setAuth } from "../../utils/user";
+import { RegisterSchema } from "../../utils/validator/register";
 import MessageAlert from "../message-alert";
 import { useState, useEffect } from "react";
 import { isEmpty } from "lodash";
 import { useMutation } from "@apollo/client";
 import { v4 } from "uuid";
 import REGISTER_CUSTOMER from "../../mutations/user/register";
+import { Form, Formik } from "formik";
+import InputField from "../form/input-field";
 const RegisterForm = () => {
+  const initialValues = { username: "", email: "", password: "" };
+  const [registerFields, setRegisterFields] = useState(initialValues);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showAlertBar, setShowAlertBar] = useState(true);
@@ -28,9 +29,9 @@ const RegisterForm = () => {
       variables: {
         input: {
           clientMutationId: v4(), // Generate a unique id.,
-          username,
-          password,
-          email,
+          username: registerFields.username,
+          password: registerFields.password,
+          email: registerFields.email,
         },
       },
       onCompleted: (data) => {
@@ -65,69 +66,10 @@ const RegisterForm = () => {
     setErrorMessage("");
     setShowAlertBar(false);
   };
-  /**
-   * Sets client side error.
-   *
-   * Sets error data to result of our client side validation,
-   * and statusbars to true so that its visible.
-   *
-   * @param {Object} validationResult Validation result data.
-   */
-  const setClientSideError = (validationResult) => {
-    if (validationResult.errors.password) {
-      setErrorMessage(validationResult.errors.password);
-    }
 
-    if (validationResult.errors.email) {
-      setErrorMessage(validationResult.errors.email);
-    }
-
-    if (validationResult.errors.username) {
-      setErrorMessage(validationResult.errors.username);
-    }
-
-    setShowAlertBar(true);
-  };
-  /**
-   * Handles user registration.
-   *
-   * @param {object} event Event Object.
-   * @return {void}
-   */
-  const handleRegister = async (event) => {
-    if (clientSide) {
-      event.preventDefault();
-
-      // Validation and Sanitization.
-      const validationResult = validateAndSanitizeRegisterForm({
-        username,
-        email,
-        password,
-      });
-
-      // If the data is valid.
-      if (validationResult.isValid) {
-        setUsername(validationResult.sanitizedData.username);
-        setPassword(validationResult.sanitizedData.password);
-        setEmail(validationResult.sanitizedData.email);
-
-        register();
-      } else {
-        setClientSideError(validationResult);
-      }
-    }
-  };
-
-  /**
-   * Handle Register success.
-   *
-   * @return {void}
-   */
   const handleRegisterSuccess = () => {
     // Set form fields value to empty.
     setErrorMessage("");
-    setUsername("");
-    setPassword("");
 
     // localStorage.setItem( 'registration-success', 'yes' );
 
@@ -135,6 +77,13 @@ const RegisterForm = () => {
     setSuccessMessage(
       "Registration Successful! . You will be logged in now..."
     );
+  };
+
+  const onSubmit = (values, actions) => {
+    setErrorMessage(null);
+    const { username, email, password } = values;
+    setRegisterFields({ username, password, email });
+    register();
   };
 
   return (
@@ -162,67 +111,49 @@ const RegisterForm = () => {
           )
         : ""}
 
-      {/* Register Form */}
-      <form className="mt-1" onSubmit={(event) => handleRegister(event)}>
-        {/* Username */}
-        <div className="form-group">
-          <label className="lead mt-1" htmlFor="username">
-            Username
-          </label>
-          <input
-            type="text"
-            className="form-control"
-            id="username"
-            placeholder="Enter username"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-          />
-        </div>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={RegisterSchema}
+        onSubmit={(values, actions) => onSubmit(values, actions)}
+      >
+        {({ errors, touched }) => (
+          <Form>
+            <InputField
+              label="Username"
+              name="username"
+              placeholder="John Doe"
+              errors={errors}
+              touched={touched}
+            />
+            <InputField
+              label="Email"
+              name="email"
+              placeholder="johndoe@gmail.com"
+              errors={errors}
+              touched={touched}
+            />
+            <InputField
+              label="Password"
+              name="password"
+              placeholder="********"
+              type="password"
+              errors={errors}
+              touched={touched}
+            />
 
-        {/* Username */}
-        <div className="form-group">
-          <label className="lead mt-1" htmlFor="email">
-            Email
-          </label>
-          <input
-            type="email"
-            className="form-control"
-            id="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
-
-        {/* Password */}
-        <div className="form-group">
-          <label className="lead mt-1" htmlFor="password">
-            Password
-          </label>
-          <input
-            type="password"
-            className="form-control"
-            id="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div className="form-group">
-          <button
-            className="btn btn-dark"
-            disabled={registerLoading ? true : false}
-            type="submit"
-          >
-            Register
-          </button>
-        </div>
-
-        {/*	Loading */}
-        {registerLoading ? "REgistering la deh" : ""}
-      </form>
+            <div className="form-group">
+              <button
+                className="btn btn-dark"
+                disabled={registerLoading ? true : false}
+                type="submit"
+              >
+                Register
+              </button>
+            </div>
+          </Form>
+        )}
+      </Formik>
+      {registerLoading ? "REgistering la deh" : ""}
     </div>
   );
 };
