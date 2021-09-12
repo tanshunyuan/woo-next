@@ -21,6 +21,9 @@ import CheckboxField from "./form-elements/CheckboxField";
 import CLEAR_CART_MUTATION from "../../mutations/clear-cart";
 import { ICheckoutInfo, ICustomerInfo } from "../../utils/types";
 import { handleHitPay } from "../../utils/newCheckout";
+import Shipping from "../shipping/shipping";
+import client from "../ApolloClient";
+import GET_SHIPPING_METHODS from "../../queries/get-shipping-methods";
 
 // Use this for testing purposes, so you dont have to fill the checkout form over an over again.
 const defaultCustomerInfo: ICustomerInfo = {
@@ -335,6 +338,7 @@ const CheckoutForm = ({ countriesData }) => {
               )}
             </div>
           </div>
+          <Shipping/>
         </form>
       ) : null}
       {/*	Show message if Order Success*/}
