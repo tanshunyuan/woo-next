@@ -4,11 +4,17 @@ import { isEmpty } from "lodash";
 import { useMutation } from "@apollo/client";
 import LOGIN from "../../mutations/user/login";
 import { v4 } from "uuid";
-import {sanitize} from '../../functions'
+import { sanitize } from "../../functions";
+import { Formik, Form } from "formik";
+import { LoginSchema } from "../../utils/validator/login";
+import InputField from "../../components/form/input-field";
 
-import validateAndSanitizeLoginForm from "../../utils/validator/login";
 const LoginForm = () => {
+  const initialValues = { username: "", password: "" };
   const [loggedIn, setLoggedIn] = useState(false);
+  const [loginFields, setLoginFields] = useState(initialValues);
+
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     const auth = isUserLoggedIn();
@@ -17,12 +23,6 @@ const LoginForm = () => {
       setLoggedIn(true);
     }
   }, [loggedIn]);
-  const [loginFields, setLoginFields] = useState({
-    username: "admin",
-    password: "1234",
-  });
-
-  const [errorMessage, setErrorMessage] = useState(null);
 
   // Login Mutation.
   const [login, { loading: loginLoading, error: loginError }] = useMutation(
@@ -60,54 +60,16 @@ const LoginForm = () => {
     }
   );
 
-  const onFormSubmit = (event) => {
-    event.preventDefault();
+  const onSubmit = (values, actions) => {
     setErrorMessage(null);
-
-    // Validation and Sanitization.
-    const validationResult = validateAndSanitizeLoginForm({
-      username: loginFields.username,
-      password: loginFields.password,
-    });
-
-    if (validationResult.isValid) {
-      setLoginFields({
-        username: validationResult.sanitizedData.username,
-        password: validationResult.sanitizedData.password,
-      });
-      login();
-    } else {
-      setClientSideError(validationResult);
-    }
+    const { username, password } = values;
+    setLoginFields({ username, password });
+    login();
   };
-
-  /**
-   * Sets client side error.
-   *
-   * Sets error data to result received from our client side validation function,
-   * and statusbar to true so that its visible to show the error.
-   *
-   * @param {Object} validationResult Validation Data result.
-   */
-  const setClientSideError = (validationResult) => {
-    if (validationResult.errors.password) {
-      setErrorMessage(validationResult.errors.password);
-    }
-
-    if (validationResult.errors.username) {
-      setErrorMessage(validationResult.errors.username);
-    }
-  };
-
-  const handleOnChange = (event) => {
-    setLoginFields({ ...loginFields, [event.target.name]: event.target.value });
-  };
-
-  const { username, password } = loginFields;
 
   return (
     <div className="login-form col-md-6">
-    <pre>{JSON.stringify(loggedIn)}</pre>
+      <pre>{JSON.stringify(loggedIn)}</pre>
       <h4 className="mb-4">Login</h4>
       {!isEmpty(errorMessage) && (
         <div
@@ -115,34 +77,36 @@ const LoginForm = () => {
           dangerouslySetInnerHTML={{ __html: sanitize(errorMessage) }}
         />
       )}
-      <form onSubmit={onFormSubmit}>
-        <label className="form-group">
-          Username:
-          <input
-            type="text"
-            className="form-control"
-            name="username"
-            value={username}
-            onChange={handleOnChange}
-          />
-        </label>
-        <br />
-        <label className="form-group">
-          Password:
-          <input
-            type="password"
-            className="form-control"
-            name="password"
-            value={password}
-            onChange={handleOnChange}
-          />
-        </label>
-        <br />
-        <button className="btn btn-dark mb-3" type="submit">
-          Login
-        </button>
-        {loginLoading && "loggin in la sial"}
-      </form>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={LoginSchema}
+        onSubmit={(values, actions) => onSubmit(values, actions)}
+      >
+        {({ errors, touched }) => (
+          <Form>
+            <InputField
+              label="Username"
+              name="username"
+              placeholder="Username"
+              errors={errors}
+              touched={touched}
+            />
+            <InputField
+              label="Password"
+              name="password"
+              placeholder="Password"
+              type="password"
+              errors={errors}
+              touched={touched}
+            />
+
+            <button type="submit" className="m-4">
+              Submit
+            </button>
+          </Form>
+        )}
+      </Formik>
+      {loginLoading && "loggin in la sial"}
     </div>
   );
 };

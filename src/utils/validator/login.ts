@@ -1,4 +1,5 @@
 import validator from "validator";
+import * as Yup from 'yup';
 import { isEmpty } from "lodash";
 interface ILogin {
   username: string;
@@ -17,6 +18,17 @@ interface ILoginReturn{
   errors:any
   isValid:boolean
 }
+
+ export const LoginSchema = Yup.object().shape({
+   username: Yup.string()
+     .min(2, 'Too Short!')
+     .max(50, 'Too Long!')
+     .required('Required'),
+   password: Yup.string()
+     .min(1, 'Too Short!')
+     .max(50, 'Too Long!')
+     .required('Required'),
+ });
 
 const validateAndSanitizeLoginForm = (data:ILogin):ILoginReturn => {
   let errors = {};
